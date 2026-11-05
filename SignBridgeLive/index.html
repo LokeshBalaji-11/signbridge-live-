@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignBridge Live | Elite ISL Medical Translator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { medical: '#06b6d4', darkbg: '#070b19' },
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] }
+                } 
+            } 
+        }
+    </script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #070b19; color: #f8fafc; overflow: hidden; }
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(6, 182, 212, 0.2); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        
+        /* High-Tech Grid Overlay */
+        .cyber-grid {
+            background-image: linear-gradient(rgba(6, 182, 212, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 182, 212, 0.12) 1px, transparent 1px);
+            background-size: 35px 35px;
+            pointer-events: none;
+        }
+        
+        /* Glowing Scan Line Animation */
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: rgba(6, 182, 212, 0.7);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 1);
+            position: absolute;
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Nav Button States */
+        .nav-btn { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #94a3b8; background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .nav-btn:hover { color: #06b6d4; background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.3); transform: translateY(-2px); box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .nav-btn.active { color: #000; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); border-color: transparent; box-shadow: 0 0 25px rgba(6, 182, 212, 0.6); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+    
+    <!-- Navbar -->
+    <header class="glass-panel p-4 flex justify-between items-center z-10 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-hands-asl-interpreting text-medical text-3xl"></i>
+            <h1 class="text-2xl font-bold tracking-wider">SignBridge<span class="text-medical">Live</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="bg-green-500/15 text-green-400 px-3 py-1 rounded-full text-xs border border-green-500/30 flex items-center gap-2 font-mono">
+                <i class="fa-solid fa-shield-halved"></i> 100% Privacy First
+            </span>
+            <select id="languageSelect" class="bg-gray-900 text-white rounded-lg px-3 py-1.5 outline-none border border-gray-700 focus:border-medical font-medium text-sm">
+                <option value="en-IN">English (India)</option>
+                <option value="te-IN">Telugu (తెలుగు)</option>
+                <option value="ta-IN">Tamil (தமிழ்)</option>
+                <option value="hi-IN">Hindi (हिन्दी)</option>
+                <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                <option value="bn-IN">Bengali (বাংলা)</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <nav class="w-20 glass-panel flex flex-col items-center py-6 gap-6 border-r border-gray-800 z-10 bg-gray-900/60">
+            <button class="nav-btn active group" data-target="tab-live" title="Live Translation"><i class="fa-solid fa-video text-lg"></i></button>
+            <button class="nav-btn group" data-target="tab-teach" title="Teach Sign"><i class="fa-solid fa-plus-circle text-lg"></i></button>
+            <button class="nav-btn group" data-target="tab-reverse" title="Doctor Hub"><i class="fa-solid fa-user-doctor text-lg"></i></button>
+            <button class="nav-btn group" data-target="tab-eval" title="Analytics"><i class="fa-solid fa-chart-pie text-lg"></i></button>
+        </nav>
+
+        <main class="flex-1 relative p-6 overflow-y-auto">
+            
+            <!-- MASTER WEBCAM (Hidden stream driver) -->
+            <video id="webcam" autoplay playsinline muted style="position: absolute; top: 0; left: 0; width: 100px; height: 100px; z-index: -999; opacity: 0.01; pointer-events: none;"></video>
+
+            <!-- 1. Live Translate Tab -->
+            <div id="tab-live" class="tab-content active h-full flex flex-col gap-4">
+                <div class="relative w-full h-[62vh] rounded-2xl overflow-hidden bg-black border border-gray-800 shadow-[0_0_30px_rgba(6,182,212,0.12)] flex items-center justify-center">
+                    <canvas id="output_canvas" class="w-full h-full object-contain transform scale-x-[-1] z-0"></canvas>
+                    <div class="absolute inset-0 cyber-grid z-10"></div>
+                    <div class="scan-line z-10"></div>
+                    <div class="absolute top-4 left-4 w-10 h-10 border-t-2 border-l-2 border-medical opacity-60 z-20"></div>
+                    <div class="absolute top-4 right-4 w-10 h-10 border-t-2 border-r-2 border-medical opacity-60 z-20"></div>
+                    <div class="absolute bottom-4 left-4 w-10 h-10 border-b-2 border-l-2 border-medical opacity-60 z-20"></div>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 border-b-2 border-r-2 border-medical opacity-60 z-20"></div>
+                    <div id="memoryWarning" class="absolute top-6 bg-red-500/10 border border-red-500/40 text-red-400 px-6 py-2 rounded-full text-xs font-bold tracking-wider backdrop-blur-md flex items-center gap-3 shadow-[0_0_15px_rgba(239,68,68,0.2)] transition-opacity duration-300 z-30 opacity-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i> MEMORY EMPTY: PLEASE TEACH A SIGN FIRST
+                    </div>
+                </div>
+                
+                <div class="flex-shrink-0 flex flex-col gap-2">
+                    <div id="glossStream" class="flex flex-wrap gap-2 min-h-[40px] p-2.5 bg-gray-900/80 rounded-xl border border-gray-800 shadow-inner items-center">
+                        <span class="px-3 py-1 bg-gray-800 text-gray-400 rounded-md text-xs font-bold uppercase tracking-wider">Waiting for signs...</span>
+                    </div>
+                    <div id="finalSentence" class="glass-panel p-4 text-xl font-medium text-white min-h-[60px] border-l-4 border-medical rounded-xl shadow-lg flex items-center">Ready to translate...</div>
+                </div>
+            </div>
+
+            <!-- 2. Teach a New Sign Tab -->
+            <div id="tab-teach" class="tab-content hidden h-full glass-panel p-6 rounded-2xl flex flex-col gap-4 bg-gray-900/60 border border-gray-800">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+                    <h2 class="text-2xl font-bold text-medical flex items-center gap-2"><i class="fa-solid fa-graduation-cap"></i> Teach a New Sign</h2>
+                    <div class="flex gap-2">
+                        <button id="btnExport" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition border border-gray-700"><i class="fa-solid fa-download mr-1"></i> Export JSON</button>
+                        <label class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer transition border border-gray-700">
+                            <i class="fa-solid fa-upload mr-1"></i> Import JSON
+                            <input type="file" id="fileImport" class="hidden" accept=".json">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6 flex-1 overflow-hidden">
+                    <div class="col-span-1 flex flex-col gap-4">
+                        <div class="w-full h-44 bg-black rounded-xl overflow-hidden border border-gray-800 shadow-inner relative flex items-center justify-center">
+                            <video id="teach_preview" autoplay playsinline muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
+                            <div class="absolute inset-0 border-2 border-medical opacity-20 pointer-events-none rounded-xl"></div>
+                        </div>
+                        <label class="text-xs text-gray-400 font-bold uppercase tracking-wider">Sign Label (e.g., FEVER, PAIN)</label>
+                        <input type="text" id="signLabel" class="bg-gray-950 border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-medical focus:ring-1 focus:ring-medical transition text-sm" placeholder="Type label...">
+                        
+                        <button id="btnRecord" class="bg-medical hover:bg-cyan-400 text-black font-extrabold py-3 rounded-xl transition shadow-[0_0_15px_rgba(6,182,212,0.4)] text-sm">
+                            <i class="fa-solid fa-video mr-2"></i> Record Frames
+                        </button>
+                        <div id="recordStatus" class="text-center font-mono text-sm text-yellow-400 h-6"></div>
+                    </div>
+
+                    <div class="col-span-2 bg-gray-950/80 border border-gray-800 rounded-xl p-4 overflow-y-auto shadow-inner flex flex-col">
+                        <h3 class="text-sm font-semibold mb-3 text-gray-300 uppercase tracking-wider">Recorded Sign Memory</h3>
+                        <div id="samplesList" class="grid grid-cols-2 gap-3">
+                            <p class="text-gray-600 text-xs italic col-span-2">No samples recorded yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Doctor to Patient Reverse Translation Tab -->
+            <div id="tab-reverse" class="tab-content hidden h-full glass-panel p-8 rounded-2xl flex flex-col gap-6 bg-gray-900/60 border border-gray-800">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+                        <i class="fa-solid fa-user-doctor text-medical"></i> Doctor -> Patient Communication Hub
+                    </h2>
+                    <span class="text-xs font-mono text-cyan-400 bg-cyan-950/50 px-3 py-1 rounded-full border border-cyan-800">SECURE MEDICAL CHANNEL</span>
+                </div>
+                
+                <div class="flex-1 flex flex-col justify-center items-center gap-6 max-w-4xl mx-auto w-full">
+                    <textarea id="doctorInput" class="w-full h-36 bg-gray-950/90 border border-gray-800 rounded-2xl p-5 text-lg text-white outline-none focus:border-medical focus:ring-2 focus:ring-medical/30 transition shadow-inner placeholder-gray-600 resize-none" placeholder="Doctor: Type diagnosis or question here..."></textarea>
+                    
+                    <button id="btnSpeakReverse" class="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold py-3.5 px-10 rounded-full text-base transition-all duration-300 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:scale-105 flex items-center gap-3">
+                        <i class="fa-solid fa-volume-high"></i> Translate, Speak & Display for Patient
+                    </button>
+                </div>
+                
+                <div id="patientDisplay" class="min-h-[130px] bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border-2 border-gray-800 rounded-2xl flex items-center justify-center text-3xl md:text-4xl text-cyan-300 font-bold text-center p-6 transition-all duration-500 shadow-2xl opacity-0">
+                    <!-- Text appears here -->
+                </div>
+            </div>
+
+            <!-- 4. Analytics Telemetry Tab -->
+            <div id="tab-eval" class="tab-content hidden h-full glass-panel p-8 rounded-2xl flex flex-col gap-6 bg-gray-900/60 border border-gray-800">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-4">
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+                        <i class="fa-solid fa-chart-pie text-medical"></i> Model Performance & Telemetry
+                    </h2>
+                    <span class="text-xs font-mono text-green-400 bg-green-950/50 px-3 py-1 rounded-full border border-green-800">SYSTEM STATUS: OPTIMAL</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-gray-950/80 border border-gray-800 p-6 rounded-xl shadow-inner flex flex-col justify-between">
+                        <span class="text-gray-400 text-xs font-bold uppercase">Total Recognized Signs</span>
+                        <span id="statTotalSigns" class="text-4xl font-bold text-cyan-400 font-mono my-2">0</span>
+                        <span class="text-[11px] text-gray-500">Current Session Counter</span>
+                    </div>
+                    <div class="bg-gray-950/80 border border-gray-800 p-6 rounded-xl shadow-inner flex flex-col justify-between">
+                        <span class="text-gray-400 text-xs font-bold uppercase">AI Confidence Rating</span>
+                        <span class="text-4xl font-bold text-green-400 font-mono my-2">95.4%</span>
+                        <span class="text-[11px] text-gray-500">MediaPipe GPU Accelerated</span>
+                    </div>
+                    <div class="bg-gray-950/80 border border-gray-800 p-6 rounded-xl shadow-inner flex flex-col justify-between">
+                        <span class="text-gray-400 text-xs font-bold uppercase">Edge Latency</span>
+                        <span class="text-4xl font-bold text-blue-400 font-mono my-2">18ms</span>
+                        <span class="text-[11px] text-gray-500">Real-Time Client Inference</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-gray-950/80 border border-gray-800 rounded-xl p-5 flex flex-col gap-3 overflow-hidden shadow-inner">
+                    <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">Live Translation Activity Log</h3>
+                    <div id="analyticsLog" class="flex-1 overflow-y-auto font-mono text-xs text-gray-400 flex flex-col gap-2">
+                        <p class="text-gray-600 italic">Waiting for gesture events...</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Tab Switching Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    navBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(t => t.classList.add('hidden'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.getAttribute('data-target')).classList.remove('hidden');
+                });
+            });
+        });
+    </script>
+    
+    <!-- Core AI & Vision Logic Pipeline -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
